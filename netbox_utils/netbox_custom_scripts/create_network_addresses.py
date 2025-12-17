@@ -6,7 +6,7 @@
 # - Stores address as "<host>/<parent prefixlen>" (host form, not network)
 # - Forces:
 #     status = active  (uses Status model when available; else falls back to "active")
-#     tenant = org_NERD
+#     tenant = org_nerd
 #     description = NETWORK / GATEWAY / BROADCAST
 #     role tag present
 
@@ -34,17 +34,17 @@ class Allocate_Active_Addresses(Script):
 
     All IPs (new and existing) are forced to:
       - status = active (Status FK when available; else "active" slug)
-      - tenant = org_NERD
+      - tenant = org_nerd
       - description = NETWORK / GATEWAY / BROADCAST
       - address normalized to <host>/<parent prefixlen> (host form)
       - role tag present
     """
 
     class Meta:
-        name = "Allocate/Update active IPs for prefixes (tenant=org_NERD)"
+        name = "Allocate/Update active IPs for prefixes (tenant=org_nerd)"
         description = (
             "Creates or updates NETWORK/GATEWAY/BROADCAST (IPv4) and NETWORK/GATEWAY (IPv6) "
-            "as active for active, non-container prefixes. Tenant forced to org_NERD. "
+            "as active for active, non-container prefixes. Tenant forced to org_nerd. "
             "Idempotent: avoids no-op saves that cause noisy change records."
         )
         commit_default = True
@@ -88,9 +88,9 @@ class Allocate_Active_Addresses(Script):
             return Tenant.objects.get(slug="org_nerd")
         except Tenant.DoesNotExist:
             try:
-                return Tenant.objects.get(name="org_NERD")
+                return Tenant.objects.get(name="org_nerd")
             except Tenant.DoesNotExist:
-                raise RuntimeError("Tenant 'org_NERD' (slug 'org_nerd') does not exist in NetBox!")
+                raise RuntimeError("Tenant 'org_nerd' (slug 'org_nerd') does not exist in NetBox!")
 
     # ---- Status handling (robust across versions) --------------------------------
 
@@ -162,7 +162,7 @@ class Allocate_Active_Addresses(Script):
 
         if ip_obj.tenant_id != getattr(tenant, "id", None):
             ip_obj.tenant = tenant
-            changed.append("tenant=org_NERD")
+            changed.append("tenant=org_nerd")
 
         # Status: use FK object if we have one; else use slug
         if isinstance(self._active_status, str):
@@ -223,7 +223,7 @@ class Allocate_Active_Addresses(Script):
             ip.save()
             if role_tag:
                 ip.tags.add(role_tag)
-            self.log_success(f"  Created: {ip.address} ({description}, tenant=org_NERD, status=active)")
+            self.log_success(f"  Created: {ip.address} ({description}, tenant=org_nerd, status=active)")
             return ip
         except ValidationError as e:
             self.log_failure(f"  Failed to create {addr_str} ({description}): {e}")
@@ -293,7 +293,7 @@ class Allocate_Active_Addresses(Script):
             vrf = pfx.vrf
             plen = net.prefixlen
 
-            self.log_info(f"Processing prefix: {net} (forced tenant=org_NERD)")
+            self.log_info(f"Processing prefix: {net} (forced tenant=org_nerd)")
 
             # NETWORK (v4 & v6)
             self._upsert_ip(
@@ -343,5 +343,5 @@ class Allocate_Active_Addresses(Script):
                     self.log_info(f"  Skipping gateway for tiny IPv6 prefix ({net}).")
 
         self.log_success(
-            f"Done. Processed prefixes: {processed}. All updates enforce active status, org_NERD tenant, descriptions, and tags."
+            f"Done. Processed prefixes: {processed}. All updates enforce active status, org_nerd tenant, descriptions, and tags."
         )

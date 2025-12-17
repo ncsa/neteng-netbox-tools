@@ -5,7 +5,7 @@ from extras.scripts import Script
 class CheckPrimaryIPForFQDNDevices(Script):
     class Meta:
         name = "Validate Primary IP for FQDN-Named Devices"
-        description = "Check that devices with names ending in .gw.domain.com or .sn.domain.com have a primary IP"
+        description = "Check that devices with names ending in .domain.com or .something.domain.com have a primary IP"
         commit_default = False
 
     def run(self, data, commit):
@@ -19,8 +19,8 @@ class CheckPrimaryIPForFQDNDevices(Script):
             if not device.name:
                 continue
 
-            # Only evaluate devices whose names end with .gw.domain.com or .sn.domain.com
-            if not (device.name.endswith(".gw.domain.com") or device.name.endswith(".sn.domain.com")):
+            # Only evaluate devices whose names end with .domain.com or .something.domain.com
+            if not (device.name.endswith(".something.com") or device.name.endswith(".something.domain.com")):
                 continue
 
             has_ip = device.primary_ip4 or device.primary_ip6

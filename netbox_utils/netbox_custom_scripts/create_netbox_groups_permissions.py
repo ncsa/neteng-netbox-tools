@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 from django.contrib.contenttypes.models import ContentType
 from django.utils.text import slugify
-
 from extras.scripts import Script, StringVar
 from tenancy.models import Tenant
-from users.models import ObjectPermission, Group  # <-- NetBox's Group
+from users.models import Group, ObjectPermission  # <-- NetBox's Group
 
 
 class CreateOrgGroupAndPerms(Script):
@@ -19,7 +18,7 @@ class CreateOrgGroupAndPerms(Script):
         required=True,
     )
     group_description = StringVar(
-        description='Optional description (applied to the Tenant only).',
+        description="Optional description (applied to the Tenant only).",
         required=False,
     )
 
@@ -33,7 +32,9 @@ class CreateOrgGroupAndPerms(Script):
     def _get_ct(self, app_label: str, model: str) -> ContentType:
         return ContentType.objects.get(app_label=app_label, model=model)
 
-    def _ensure_tenant(self, name: str, description: str | None, commit: bool) -> Tenant:
+    def _ensure_tenant(
+        self, name: str, description: str | None, commit: bool
+    ) -> Tenant:
         try:
             tenant = Tenant.objects.get(name=name)
             changed = False
@@ -51,12 +52,16 @@ class CreateOrgGroupAndPerms(Script):
             return tenant
         except Tenant.DoesNotExist:
             if commit:
-                tenant = Tenant.objects.create(name=name, slug=slugify(name), description=description or "")
+                tenant = Tenant.objects.create(
+                    name=name, slug=slugify(name), description=description or ""
+                )
                 self.log_success(f'Created tenant "{name}".')
                 return tenant
             else:
                 self.log_info(f'[DRY-RUN] Would create tenant "{name}".')
-                return Tenant(name=name, slug=slugify(name), description=description or "")
+                return Tenant(
+                    name=name, slug=slugify(name), description=description or ""
+                )
 
     def _ensure_group(self, name: str, commit: bool) -> Group:
         try:
@@ -126,11 +131,17 @@ class CreateOrgGroupAndPerms(Script):
                 if not perm.groups.filter(pk=attach_group.pk).exists():
                     if commit:
                         perm.groups.add(attach_group)
-                        self.log_success(f'Attached group "{attach_group.name}" to "{name}".')
+                        self.log_success(
+                            f'Attached group "{attach_group.name}" to "{name}".'
+                        )
                     else:
-                        self.log_info(f'[DRY-RUN] Would attach group "{attach_group.name}" to "{name}".')
+                        self.log_info(
+                            f'[DRY-RUN] Would attach group "{attach_group.name}" to "{name}".'
+                        )
             else:
-                self.log_info(f'[DRY-RUN] Would attach group "{attach_group.name}" to "{name}".')
+                self.log_info(
+                    f'[DRY-RUN] Would attach group "{attach_group.name}" to "{name}".'
+                )
 
             return perm
 
@@ -145,7 +156,9 @@ class CreateOrgGroupAndPerms(Script):
                 )
                 perm.object_types.set(desired_ct_ids)
                 perm.groups.add(attach_group)
-                self.log_success(f'Created permission "{name}" and attached group "{attach_group.name}".')
+                self.log_success(
+                    f'Created permission "{name}" and attached group "{attach_group.name}".'
+                )
                 return perm
             else:
                 self.log_info(f'[DRY-RUN] Would create permission "{name}".')
@@ -160,7 +173,9 @@ class CreateOrgGroupAndPerms(Script):
             self.log_failure("org_name cannot be empty.")
             return
 
-        self.log_info(f'Preparing Tenant, Group & Permissions for "{org}" (commit={commit})')
+        self.log_info(
+            f'Preparing Tenant, Group & Permissions for "{org}" (commit={commit})'
+        )
 
         tenant = self._ensure_tenant(name=org, description=desc, commit=commit)
         group = self._ensure_group(name=org, commit=commit)
@@ -203,18 +218,26 @@ class CreateOrgGroupAndPerms(Script):
 
         # --- NEW TASK: add this group to "All Groups Views" permission ---
         try:
-            all_views_perm = ObjectPermission.objects.get(name="All Groups Views")
+            all_views_perm = ObjectPermission.objects.get(name="1 All Groups Views")
         except ObjectPermission.DoesNotExist:
-            self.log_failure('Permission "All Groups Views" not found (expected existing global view permission).')
+            self.log_failure(
+                'Permission "All Groups Views" not found (expected existing global view permission).'
+            )
             return
 
         if not all_views_perm.groups.filter(name=group.name).exists():
             if commit:
                 all_views_perm.groups.add(group)
-                self.log_success(f'Added group "{group.name}" to "All Groups Views" permission.')
+                self.log_success(
+                    f'Added group "{group.name}" to "1 All Groups Views" permission.'
+                )
             else:
-                self.log_info(f'[DRY-RUN] Would add group "{group.name}" to "All Groups Views" permission.')
+                self.log_info(
+                    f'[DRY-RUN] Would add group "{group.name}" to "1All Groups Views" permission.'
+                )
         else:
-            self.log_info(f'Group "{group.name}" already in "All Groups Views"; no changes needed.')
+            self.log_info(
+                f'Group "{group.name}" already in "1All Groups Views"; no changes needed.'
+            )
 
         self.log_success("Completed." if commit else "Completed (dry run).")
